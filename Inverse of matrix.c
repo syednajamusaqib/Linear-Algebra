@@ -1,45 +1,145 @@
 #include <stdio.h>
-
-/*
-
-There are basically five steps in this approach
-Step 1: Check for Non Zero Row
-Step 2: Swap Rows
-Step 3: Make Pivot element of Pivot Row "1"
-Step 4: Eliminate elements below pivots to get Row-Echelon Form  
-Step 5: Once you achieved row echelon form traverse matrix in reverse direction and make entries above 1 as 0
-
-*/
-
-
-
 #define ROWS 3
 #define COLS 3
 
-int findNonZeroRow(double matrix[][COLS], int pivot_row, int col){
-    for(int row = pivot_row; row < ROWS; row++){
-        if(matrix[row][col] != 0){
-            return row;
+
+void cofactor(double matrix[ROWS][COLS], int k);
+void transpose(double matrix[ROWS][COLS], double cofactorMatrix[ROWS][COLS], int k);
+double determinant(double matrix[][COLS],int k);
+void printMatrix(double matrix[][COLS], int row, int col);
+
+int main(void){
+
+
+   double matrix[ROWS][COLS];
+
+    for(int i = 0; i < ROWS; i++) {
+        for(int j = 0; j < COLS; j++) {
+            printf("Enter the [%d,%d] element: ", i + 1, j + 1);
+            scanf("%lf", &matrix[i][j]);
         }
     }
-    return -1;
+    puts("\nYour Matrix is: \n");
+    printMatrix(matrix, ROWS, COLS);
+
+    int deter = determinant(matrix, COLS);
+    if(deter == 0){
+        puts("Determinant is 0 So No Inverse Possible");
+    }
+    else
+        cofactor(matrix,COLS);
+
+    return 0;
 }
 
-void swapRows(double matrix[][COLS], int row1, int row2){
-    double temp[COLS];
+double determinant(double matrix[ROWS][COLS],int k){   // Determinant through recursion
+    double result = 0; // It will store result of determinant
+    int sign = 1; // Sign which will be changed every time we change row and columns
+    int mainRow; // first row which will be used to calculate determinant
+    double smallMatrix[ROWS][COLS]; // Smaller matrix to get determinant
+    int rowOfNewMatrix, colOfNewMatrix;
 
-    for(int i=0;i<COLS;i++){
-        temp[i] = matrix[row1][i];
-        matrix[row1][i] = matrix[row2][i];
-        matrix[row2][i] = temp[i];
+    // Base Case for recursive function
+    if( k == 1){ 
+        return matrix[0][0];
     }
+    else{
+        for(mainRow = 0; mainRow < k; mainRow++){ // Traversing first row of the matrix
+            rowOfNewMatrix = 0;
+            colOfNewMatrix = 0;
+            for(int i = 0; i<k; i++){  // rows
+                for(int j = 0; j<k; j++){ // columns
+                    smallMatrix[i][j] = 0; // making smaller matrix zero so that we can add desired elements into it
+                    if(i!=0 && j!=mainRow){ // Valid condition case
+                        smallMatrix[rowOfNewMatrix][colOfNewMatrix] = matrix[i][j];
+                        if(colOfNewMatrix < (k-2)){
+                            colOfNewMatrix++;
+                        }
+                        else{
+                            colOfNewMatrix = 0;
+                            rowOfNewMatrix++;
+                        }
+                    }
+                }
+            }
+            result = result + sign * (matrix[0][mainRow]* determinant(smallMatrix,k-1)); // Recursion
+            sign = -1 * sign;
+        }
+    }
+    return result;
 }
 
-void makePivotOne(double matrix[][COLS], int pivot_row, int col){
-    double pivot_element = matrix[pivot_row][col];
-    for(int i=0; i < COLS; i++){
-        matrix[pivot_row][i] /= pivot_element;
+void transpose(double matrix[ROWS][COLS], double cofactorMatrix[ROWS][COLS], int k){
+    double transposedMatrix[ROWS][COLS];
+    for(int row = 0; row < k; row++){
+        for(int col = 0; col < k; col++){
+            transposedMatrix[row][col] = cofactorMatrix[col][row];
+        }
     }
+
+    double deter = determinant(matrix,k);
+    double inversedMatrix[ROWS][COLS];
+
+    for(int row = 0; row < k; row++){
+        for(int col = 0; col < k; col++){
+            inversedMatrix[row][col] = transposedMatrix[row][col] / deter;
+        }
+    }
+
+    printf("\nThe inverse of matrix: \n");
+   for (int row = 0;row < k; row++)
+    {
+     for (int col = 0;col < k; col++)
+       {
+         printf("\t%.3lf", inversedMatrix[row][col]);
+        }
+    printf("\n");
+     }
+
+
+     printf("\nThe adjoint of matrix: \n");
+   for (int row = 0;row < k; row++)
+    {
+     for (int col = 0;col < k; col++)
+       {
+         printf("\t%.3lf", transposedMatrix[row][col]);
+        }
+    printf("\n");
+     }
+
+}
+
+
+void cofactor(double matrix[ROWS][COLS], int k){
+    // Declaring varaibles and matrices we need
+    double resultMatrix[ROWS][COLS]; // It will be our final cofactor Matrix
+    double subMatrix[ROWS][COLS]; // It is the Matrix that will be extracted from original matrix
+    int rowsOfResult, colsOfResult, rowsOfSub, colsOfSub;
+    int sign = 1;
+
+    for(rowsOfResult = 0; rowsOfResult < k ; rowsOfResult++){
+        for(colsOfResult = 0; colsOfResult < k; colsOfResult++){
+            rowsOfSub = 0; // Initializing rows
+            colsOfSub = 0; // 
+            for(int i = 0; i < k; i++){
+                for(int j = 0; j < k; j++){
+                    if(i != rowsOfResult && j != colsOfResult){
+                        subMatrix[rowsOfSub][colsOfSub] = matrix[i][j]; // Populating Sub Matrix
+                        if(colsOfSub < (k-2)){ 
+                            colsOfSub++;
+                        }
+                        else{
+                            colsOfSub = 0;
+                            rowsOfSub++;
+                        }
+                    }
+                }
+            }
+            resultMatrix[rowsOfResult][colsOfResult] = sign * determinant(subMatrix,k-1);
+            sign = -1 * sign;
+        }
+    }
+    transpose(matrix,resultMatrix, k);
 }
 
 void printMatrix(double matrix[][COLS], int row, int col) {
@@ -50,68 +150,4 @@ void printMatrix(double matrix[][COLS], int row, int col) {
         printf("\n");
         
     }
-}
-void eliminate_below(double matrix[][COLS], int pivot_row, int col){
-    // double pivot_element = matrix[pivot_row][col];
-    for(int row = pivot_row+1; row < ROWS; row++){
-        double factor = matrix[row][col];
-        for(int i=0; i < COLS; i++){
-            matrix[row][i] -= factor * matrix[pivot_row][i];
-        }
-    }
-    puts("\n");
-    printMatrix(matrix,ROWS,COLS);
-}
-
-
-void eliminate_above(double matrix[][COLS], int pivot_row, int col) {
-    for (int row = pivot_row - 1; row >= 0; row--) {
-        double num = matrix[row][col];
-        for (int col = 0; col < COLS; col++) {
-            matrix[row][col] -= num * matrix[pivot_row][col];
-        }
-    }
-}
-
-void reducedRowEchelonForm(double matrix[][COLS]){
-    int pivot_row = 0;
-    for(int col = 0; col < COLS; col++){
-        int non_zero_row = findNonZeroRow(matrix,pivot_row,col);
-        if(non_zero_row != -1){
-            swapRows(matrix,pivot_row,non_zero_row);
-            makePivotOne(matrix,pivot_row,col);
-            eliminate_below(matrix,pivot_row,col);
-            eliminate_above(matrix,pivot_row,col);
-            pivot_row++;
-        }
-    }
-}
-
-
-
-
-
-
-int main(void){
-
-    double matrix[ROWS][COLS];
-
-    for(int i = 0; i < ROWS; i++) {
-        for(int j = 0; j < COLS; j++) {
-            printf("Enter the [%d,%d] element: ", i + 1, j + 1);
-            scanf("%lf", &matrix[i][j]);
-        }
-    }
-
-    puts("Your Matrix is:");
-    printMatrix(matrix , ROWS, COLS);
-
-    reducedRowEchelonForm(matrix);
-
-    puts("\nReduced REF Form is \n");
-    printMatrix(matrix,ROWS,COLS);
-
-
-
-    return 0;
 }
